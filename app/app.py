@@ -1,12 +1,11 @@
 from flask import Flask
-import os
+from datetime import datetime
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "🚀 Hello from a secure, fast, and optimized Docker container!"
+    return f"<h1>Hello from CI/CD 🚀</h1><p>Deployed at: {datetime.utcnow()} UTC</p>"
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
