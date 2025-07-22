@@ -25,9 +25,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: 🕒 Generate dynamic tag based on timestamp
+        id: get_tag
+        run: echo "TAG=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+
       - name: 🏗️ Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: thepm002/flask-practical:latest
+          tags: |
+            thepm002/docker_ci-cd_test:latest
+            thepm002/docker_ci-cd_test:${{ env.TAG }}
