@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - main  # Run workflow on push to main
 
 jobs:
   build-and-push:
@@ -56,7 +56,25 @@ jobs:
           username: root
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
+            TAG=${{ needs.build-and-push.outputs.image_tag }}
+
+            echo "🔍 Checking for container using port 80..."
+            CONTAINER_ON_PORT_80=$(docker ps --filter "publish=80" -q)
+            if [ ! -z "$CONTAINER_ON_PORT_80" ]; then
+              echo "⚠️ Stopping container using port 80: $CONTAINER_ON_PORT_80"
+              docker stop $CONTAINER_ON_PORT_80
+              docker rm $CONTAINER_ON_PORT_80
+            fi
+
+            echo "🛑 Stopping and removing old container 'flask-app' (if exists)..."
             docker stop flask-app || true
             docker rm flask-app || true
-            docker pull thepm002/docker_ci-cd_test:${{ needs.build-and-push.outputs.image_tag }}
-            docker run -d --name flask-app -p 80:5000 thepm002/docker_ci-cd_test:${{ needs.build-and-push.outputs.image_tag }}
+
+            echo "🔐 Logging into Docker Hub..."
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+            echo "📥 Pulling image: thepm002/docker_ci-cd_test:$TAG"
+            docker pull thepm002/docker_ci-cd_test:$TAG
+
+            echo "🚀 Starting new container..."
+            docker run -d --name flask-app -p 80:5000 thepm002/docker_ci-cd_test:$TAG
